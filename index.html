@@ -151,7 +151,31 @@ function hex(h){const n=parseInt(h.slice(1),16);return [((n>>16)&255)/255,((n>>8
 function applyBg(d,bg,trans){ d.layers.forEach(L=>{(L.shapes||[]).forEach(function w(s){
   if(s.it)s.it.forEach(w); if(s.ty==='fl'&&s.c&&s.c.sid==='bgColor'){s.c={a:0,k:hex(bg)};s.o={a:0,k:trans?0:100};}});});}
 
-function buildFromSpec(spec){
+function num(v,min,max,def){ v=+v; if(!isFinite(v))return def; return Math.max(min,Math.min(max,v)); }
+function coerceSpec(s){
+  s=(s&&typeof s==='object')?s:{}; const o={};
+  o.sec=num(s.sec,1,4,2.5);
+  if(typeof s.bg==='string') o.bg=s.bg;
+  if('transparent' in s) o.transparent=!!s.transparent;
+  if('shadow' in s) o.shadow=s.shadow!==false;
+  o.__ai=s.__ai; o.__custom=s.__custom;
+  if(s.blink){ const b=(typeof s.blink==='object')?s.blink:{};
+    let c=Array.isArray(b.centers)?b.centers.map(x=>num(x,0,1,0.5)):null;
+    const close=Math.round(num(b.close,3,9,5)), squash=Math.round(num(b.squash,4,9,7));
+    if(!c||!c.length){ c=(close>=8||squash<=4)?[0.4,0.85]:[0.7]; }
+    o.blink={centers:c,close,squash}; }
+  if(s.look) o.look=true;
+  if(s.jump){ const j=(typeof s.jump==='object')?s.jump:{}; o.jump={count:Math.round(num(j.count,1,3,1)),height:Math.round(num(j.height,30,110,82))}; }
+  if(s.bob){ const b=(typeof s.bob==='object')?s.bob:{}; o.bob={amp:Math.round(num(b.amp,8,26,16)),cycles:Math.round(num(b.cycles,1,3,2))}; }
+  if(s.sway){ const w=(typeof s.sway==='object')?s.sway:{}; o.sway={angle:Math.round(num(w.angle,3,12,7)),cycles:Math.round(num(w.cycles,1,3,2))}; }
+  if(s.pulse){ const p=(typeof s.pulse==='object')?s.pulse:{}; o.pulse={amount:num(p.amount,0.05,0.18,0.1),cycles:Math.round(num(p.cycles,1,3,2))}; }
+  if(s.flip){ const f=(typeof s.flip==='object')?s.flip:{}; o.flip={count:Math.round(num(f.count,1,2,1))}; }
+  if(s.turn3d){ const t=(typeof s.turn3d==='object')?s.turn3d:{}; o.turn3d={count:Math.round(num(t.count,1,2,1))}; }
+  if(!(o.blink||o.look||o.jump||o.bob||o.sway||o.pulse||o.flip||o.turn3d)) o.blink={centers:[0.6],close:5,squash:7};
+  return o;
+}
+function buildFromSpec(rawSpec){
+  const spec=coerceSpec(rawSpec);
   const loopF=Math.round((spec.sec||2.5)*FR);
   const d=clone(BASE); d.op=loopF;
   const close=spec.close||5;
@@ -208,7 +232,11 @@ function presetSpec(p){
   return Object.assign({sec:ui.sec,bg:ui.bg,transparent:ui.trans},m);
 }
 let anim,current,currentName='single';
-function renderSpec(spec){ current=spec; const data=buildFromSpec(spec); if(anim)anim.destroy();
+function renderSpec(spec){ current=spec;
+  let data; try{ data=buildFromSpec(spec); }
+  catch(e){ data=buildFromSpec({blink:{centers:[0.6],close:5,squash:7},sec:ui.sec,bg:ui.bg,transparent:ui.trans});
+    $('pstatus').textContent='Showed a safe fallback ('+e.message+')'; }
+  if(anim)anim.destroy();
   document.querySelector('.stage').style.background=spec.transparent?'transparent':(spec.bg||'#111');
   anim=lottie.loadAnimation({container:document.getElementById('anim'),renderer:'svg',loop:true,autoplay:true,animationData:data}); }
 function renderPreset(p){ currentName=p; document.querySelectorAll('#presets button').forEach(x=>x.classList.toggle('on',x.dataset.p===p));
@@ -233,11 +261,11 @@ $('pgo').onclick=async()=>{
   try{
     const r=await fetch('/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:text})});
     const d=await r.json(); if(!r.ok||d.error) throw new Error(d.error||('HTTP '+r.status));
-    const spec=d.spec; spec.__ai=true; spec.sec=ui.sec; spec.bg=ui.bg; spec.transparent=ui.trans; spec.shadow=ui.shadow;
+    const spec=d.spec||{}; spec.__ai=true; spec.sec=ui.sec; spec.bg=ui.bg; spec.transparent=ui.trans; spec.shadow=ui.shadow;
     document.querySelectorAll('#presets button').forEach(x=>x.classList.remove('on'));
     $('turnwarn').style.display=spec.turn3d?'block':'none';
     currentName=text.slice(0,22).replace(/[^a-z0-9]+/gi,'-').toLowerCase()||'prompt'; renderSpec(spec);
-    $('pstatus').textContent='Done — tweak sliders, save, or download.';
+    if(!$('pstatus').textContent.startsWith('Showed')) $('pstatus').textContent='Done — tweak sliders, save, or download.';
   }catch(e){ $('pstatus').textContent='Error: '+e.message; }
   $('pgo').disabled=false;
 };
