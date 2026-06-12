@@ -17,7 +17,8 @@ Keys (include only what's relevant):
 "pulse":{"amount":0.05-0.18,"cycles":1-3}
 "flip":{"count":1-2}
 "turn3d":{"count":1-2}
-Rules: position is jump OR bob. scale is jump OR flip OR pulse (jump wins). blink and look may always be added. excited/happy=jump + quick blink. sleepy=soft slow blink (close 8-9 squash 4). curious=look. Keep it tasteful.`;
+"sleep":true
+Rules: position is jump OR bob. scale is jump OR flip OR pulse (jump wins). blink and look may always be added. excited/happy=jump + quick blink. sleepy=soft slow blink (close 8-9 squash 4). curious=look. sleep/sleeping/tired-with-eyes-closed=sleep (NOT blink). Keep it tasteful.`;
 
 const DEFAULT_MODEL = {
   gemini: 'gemini-2.5-flash',
