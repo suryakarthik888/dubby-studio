@@ -42,7 +42,19 @@
 </div>
 
 <div class="card">
-  <div class="sec-title">Presets</div>
+  <div class="sec-title">Feelings</div>
+  <div class="presets" id="feelings">
+    <button data-p="happy">Happy</button>
+    <button data-p="sad">Sad</button>
+    <button data-p="surprised">Surprised</button>
+    <button data-p="love">Love</button>
+    <button data-p="angry">Angry</button>
+    <button data-p="sleep">Sleep</button>
+    <button data-p="correct">Correct</button>
+    <button data-p="wrong">Wrong</button>
+    <button data-p="celebrate">Celebrate</button>
+  </div>
+  <div class="sec-title">Motions</div>
   <div class="presets" id="presets">
     <button data-p="single">Single blink</button>
     <button data-p="double">Double blink</button>
@@ -54,7 +66,6 @@
     <button data-p="sway">Happy sway</button>
     <button data-p="flip">Coin flip (2.5D)</button>
     <button data-p="turn">Turn (3D)</button>
-    <button data-p="sleep">Sleep</button>
   </div>
   <div class="sec-title">Tune it</div>
   <div class="ctl"><span>Loop length</span><input type="range" id="sec" min="1" max="4" step="0.25" value="2.5"><span class="v" id="secV">2.5s</span></div>
@@ -172,8 +183,9 @@ function coerceSpec(s){
   if(s.pulse){ const p=(typeof s.pulse==='object')?s.pulse:{}; o.pulse={amount:num(p.amount,0.05,0.18,0.1),cycles:Math.round(num(p.cycles,1,3,2))}; }
   if(s.flip){ const f=(typeof s.flip==='object')?s.flip:{}; o.flip={count:Math.round(num(f.count,1,2,1))}; }
   if(s.turn3d){ const t=(typeof s.turn3d==='object')?s.turn3d:{}; o.turn3d={count:Math.round(num(t.count,1,2,1))}; }
-  if(s.sleep) o.sleep=true;
-  if(!(o.blink||o.look||o.jump||o.bob||o.sway||o.pulse||o.flip||o.turn3d||o.sleep)) o.blink={centers:[0.6],close:5,squash:7};
+  if(typeof s.expr==='string' && EXPRS.includes(s.expr)) o.expr=s.expr;
+  if(s.sleep && !o.expr) o.expr='sleep';
+  if(!(o.blink||o.look||o.jump||o.bob||o.sway||o.pulse||o.flip||o.turn3d||o.sleep||o.expr)) o.blink={centers:[0.6],close:5,squash:7};
   return o;
 }
 function staticKS(){return {o:{a:0,k:100},r:{a:0,k:0},p:{a:0,k:[0,0,0]},a:{a:0,k:[0,0,0]},s:{a:0,k:[100,100,100]}};}
@@ -215,10 +227,73 @@ function buildSleep(d,loopF,spec){
   applyBg(d, spec.bg||'#111111', !!spec.transparent);
   return d;
 }
+// ===== expression kit =====
+const BLC=[87,84], BRC=[227,78];
+const RED=[1,0.302,0.427], TEAR=[0.431,0.776,1], SPARK=[1,0.878,0.541], PUPILC=[0.086,0.020,0];
+const CONF=[[1,0.42,0.13],[0.43,0.78,1],[0.55,0.86,0.32],[1,0.84,0.25],[0.83,0.45,0.95]];
+const EXPRS=['happy','sad','surprised','love','angry','sleep','correct','wrong','celebrate'];
+function elIt(cx,cy,rx,ry){return {ty:'el',p:{a:0,k:[cx,cy]},s:{a:0,k:[rx*2,ry*2]}};}
+function rcIt(cx,cy,w,h,rd){return {ty:'rc',p:{a:0,k:[cx,cy]},s:{a:0,k:[w,h]},r:{a:0,k:rd||0}};}
+function shIt(p){return {ty:'sh',ks:{a:0,k:p}};}
+function flIt(c){return {ty:'fl',c:{a:0,k:c},o:{a:0,k:100}};}
+function stIt(c,w){return {ty:'st',c:{a:0,k:c},o:{a:0,k:100},w:{a:0,k:w},lc:2,lj:2};}
+function trIt(){return {ty:'tr',p:{a:0,k:[0,0]},a:{a:0,k:[0,0]},s:{a:0,k:[100,100]},r:{a:0,k:0},o:{a:0,k:100}};}
+function grpIt(it){return {ty:'gr',it};}
+function findL(d,nm){return d.layers.find(L=>L.nm===nm);}
+function staticL(nm,it,ind,loopF,parent){const L={ty:4,nm,ind,ip:0,op:loopF,st:0,ks:staticKS(),shapes:[grpIt(it)]}; if(parent!=null)L.parent=parent; return L;}
+function arcPath(ecx,ecy,up){return up?{c:false,v:[[ecx-30,ecy+2],[ecx+30,ecy+2]],o:[[18,-14],[0,0]],i:[[0,0],[-18,-14]]}:{c:false,v:[[ecx-32,ecy-4],[ecx+32,ecy-4]],o:[[20,15],[0,0]],i:[[0,0],[-20,15]]};}
+function heartIt(cx,cy,s){const tri={c:true,v:[[cx-0.95*s,cy-0.18*s],[cx+0.95*s,cy-0.18*s],[cx,cy+0.82*s]],o:[[0,0],[0,0],[0,0]],i:[[0,0],[0,0],[0,0]]};
+  return grpIt([elIt(cx-0.42*s,cy-0.24*s,0.52*s,0.52*s),elIt(cx+0.42*s,cy-0.24*s,0.52*s,0.52*s),shIt(tri),flIt(RED),trIt()]);}
+function starPath(cx,cy,outer,inner,n){n=n||4;const v=[],o=[],i=[];for(let k=0;k<n*2;k++){const r=k%2==0?outer:inner,ang=Math.PI/2+k*Math.PI/n;v.push([cx+r*Math.cos(ang),cy-r*Math.sin(ang)]);o.push([0,0]);i.push([0,0]);}return {c:true,v,o,i};}
+function particleL(nm,ind,loopF,shapeGrp,p0,p1,t0,dur,rot,sc){
+  const op=[[t0,0],[t0+8,100],[t0+dur-10,100],[t0+dur,0]];
+  const opk=op.map((p,i)=>({t:Math.round(p[0]),s:[p[1]],...(i<op.length-1?{i:EIO.i,o:EIO.o}:{})}));
+  const pk=norm([[t0,[p0[0],p0[1],0],EIO],[t0+dur,[p1[0],p1[1],0],EIO]]);
+  return {ty:4,nm,ind,ip:0,op:loopF,st:0,ks:{o:{a:1,k:opk},r:{a:0,k:rot||0},p:{a:1,k:pk},a:{a:0,k:[0,0,0]},s:{a:0,k:[(sc&&sc[0])||100,(sc&&sc[1])||100,100]}},shapes:[shapeGrp]};
+}
+function setBrow(d,nm,c,rot,dy){const L=findL(d,nm); if(!L)return; L.ks.r={a:0,k:rot}; L.ks.a={a:0,k:[c[0],c[1],0]}; L.ks.p={a:0,k:[c[0],c[1]+dy,0]};}
+const EYE6=['L-white-matte','L-pupil','L-white','R-white-matte','R-pupil','R-white'];
+function hideEyes(d){EYE6.forEach(nm=>{const L=findL(d,nm); if(L)L.ks.o={a:0,k:0};});}
+function eyeScale(d,sc){EYE6.forEach(nm=>{const L=findL(d,nm); if(L)L.ks.s={a:0,k:[sc,sc,100]};});}
+function pupilOffset(d,dx,dy){const Lp=findL(d,'L-pupil'),Rp=findL(d,'R-pupil'); if(Lp)Lp.ks.p={a:0,k:[LWC[0]+dx,LWC[1]+dy,0]}; if(Rp)Rp.ks.p={a:0,k:[RWC[0]+dx,RWC[1]+dy,0]};}
+function aboveBody(d,ls){const bi=d.layers.findIndex(L=>L.nm==='body'); d.layers.splice(bi,0,...ls);}
+function lidLayers(loopF,up){return [staticL('lid-L',[shIt(arcPath(LWC[0],LWC[1],up)),stIt(PUPILC,12),trIt()],800,loopF,99),staticL('lid-R',[shIt(arcPath(RWC[0],RWC[1],up)),stIt(PUPILC,12),trIt()],801,loopF,99)];}
+function heartEyeLayers(loopF){return [{ty:4,nm:'heart-L',ind:800,parent:99,ip:0,op:loopF,st:0,ks:staticKS(),shapes:[heartIt(LWC[0],LWC[1],34)]},{ty:4,nm:'heart-R',ind:801,parent:99,ip:0,op:loopF,st:0,ks:staticKS(),shapes:[heartIt(RWC[0],RWC[1],34)]}];}
+function setRig(d,pos,scale,rot){const r=findL(d,'rig'); if(pos)r.ks.p={a:1,k:pos}; if(scale)r.ks.s={a:1,k:scale}; if(rot)r.ks.r={a:1,k:rot};}
+function bounceKeys(loopF,n,h){const seg=loopF/(n+0.4); let pos=[[0,[CC[0],CC[1],0],EIO]],scl=[[0,[S0,S0,100],EIO]];
+  for(let k=0;k<n;k++){const c=seg*(k+0.6);
+    pos.push([c-9,[CC[0],CC[1]+5,0],EIN],[c,[CC[0],CC[1]-h,0],EOUT],[c+8,[CC[0],CC[1],0],EOUT]);
+    scl.push([c-9,[S0*1.08,S0*0.92,100],EIN],[c,[S0*0.95,S0*1.06,100],EOUT],[c+8,[S0*1.06,S0*0.94,100],EOUT],[c+14,[S0,S0,100],EIO]);}
+  pos.push([loopF,[CC[0],CC[1],0],EIO]); scl.push([loopF,[S0,S0,100],EIO]); return {pos:norm(pos),scale:norm(scl)};}
+function shakeRot(loopF,amp,cyc){let r=[];const N=cyc*4;for(let i=0;i<=N;i++)r.push([loopF*i/N,[amp*Math.sin(2*Math.PI*cyc*i/N)],EIO]);return norm(r);}
+function headshakePos(loopF,amp,cyc){let p=[];const N=cyc*4;for(let i=0;i<=N;i++)p.push([loopF*i/N,[CC[0]+amp*Math.sin(2*Math.PI*cyc*i/N),CC[1],0],EIO]);return norm(p);}
+function slumpKeys(loopF){return {pos:norm([[0,[CC[0],CC[1],0],EIO],[loopF*0.4,[CC[0],CC[1]+14,0],EIO],[loopF*0.75,[CC[0],CC[1]+16,0],EIO],[loopF,[CC[0],CC[1],0],EIO]]),scale:norm([[0,[S0,S0,100],EIO],[loopF*0.4,[S0*1.05,S0*0.95,100],EIO],[loopF,[S0,S0,100],EIO]])};}
+function popKeys(loopF){return {pos:norm([[0,[CC[0],CC[1]+6,0],EOUT],[6,[CC[0],CC[1]-10,0],EOUT],[16,[CC[0],CC[1],0],EIO],[loopF,[CC[0],CC[1],0],EIO]]),scale:norm([[0,[S0*1.06,S0*0.94,100],EOUT],[6,[S0*0.92,S0*1.12,100],EOUT],[14,[S0,S0,100],EIO],[loopF,[S0,S0,100],EIO]])};}
+function floatKeys(loopF,amp,cyc){let p=[];const N=cyc*4;for(let i=0;i<=N;i++)p.push([loopF*i/N,[CC[0],CC[1]-amp*Math.sin(2*Math.PI*cyc*i/N),0],EIO]);return norm(p);}
+function buildExpr(d,loopF,kind,spec){
+  d.layers.forEach(L=>{L.ip=0;L.op=loopF;});
+  if(kind==='happy'){const m=bounceKeys(loopF,2,32);hideEyes(d);aboveBody(d,lidLayers(loopF,true));setBrow(d,'brow-L',BLC,0,-6);setBrow(d,'brow-R',BRC,0,-6);setRig(d,m.pos,m.scale,null);}
+  else if(kind==='sad'){const m=slumpKeys(loopF);pupilOffset(d,0,8);setBrow(d,'brow-L',BLC,-10,-3);setBrow(d,'brow-R',BRC,10,-3);setRig(d,m.pos,m.scale,null);
+    d.layers.unshift(particleL('tear',850,loopF,grpIt([elIt(0,0,7,9),flIt(TEAR),trIt()]),[152,252],[152,312],24,loopF-40,0,[100,125]));}
+  else if(kind==='surprised'){const m=popKeys(loopF);eyeScale(d,122);setBrow(d,'brow-L',BLC,0,-9);setBrow(d,'brow-R',BRC,0,-9);setRig(d,m.pos,m.scale,null);}
+  else if(kind==='love'){const p=floatKeys(loopF,12,2);hideEyes(d);aboveBody(d,heartEyeLayers(loopF));setBrow(d,'brow-L',BLC,0,-5);setBrow(d,'brow-R',BRC,0,-5);setRig(d,p,null,null);
+    d.layers.unshift(particleL('h1',850,loopF,heartIt(0,0,16),[300,150],[326,104],0,Math.floor(loopF/2),0,[100,100]),particleL('h2',851,loopF,heartIt(0,0,22),[312,140],[338,96],Math.floor(loopF/2),Math.floor(loopF/2),0,[100,100]));}
+  else if(kind==='angry'){const r=shakeRot(loopF,4,3);pupilOffset(d,0,-2);setBrow(d,'brow-L',BLC,14,6);setBrow(d,'brow-R',BRC,-14,6);setRig(d,null,null,r);}
+  else if(kind==='sleep'){return buildSleep(d,loopF,spec||{sec:loopF/FR});}
+  else if(kind==='correct'){const m=bounceKeys(loopF,1,40);hideEyes(d);aboveBody(d,lidLayers(loopF,true));setBrow(d,'brow-L',BLC,0,-6);setBrow(d,'brow-R',BRC,0,-6);setRig(d,m.pos,m.scale,null);
+    [[-70,-90],[80,-70],[-40,-130],[95,-120]].forEach((o,i)=>d.layers.unshift(particleL('s'+i,850+i,loopF,grpIt([shIt(starPath(0,0,12,4,4)),flIt(SPARK),trIt()]),[CC[0]+o[0],CC[1]+o[1]],[CC[0]+o[0]*1.3,CC[1]+o[1]-12],10,40,0,[100,100])));}
+  else if(kind==='wrong'){const p=headshakePos(loopF,16,3);pupilOffset(d,0,4);setBrow(d,'brow-L',BLC,-10,2);setBrow(d,'brow-R',BRC,10,2);setRig(d,p,null,null);}
+  else if(kind==='celebrate'){const m=bounceKeys(loopF,3,46);hideEyes(d);aboveBody(d,lidLayers(loopF,true));setBrow(d,'brow-L',BLC,0,-6);setBrow(d,'brow-R',BRC,0,-6);setRig(d,m.pos,m.scale,null);
+    for(let i=0;i<10;i++){const x=120+i*22,c=CONF[i%CONF.length];d.layers.unshift(particleL('cf'+i,850+i,loopF,grpIt([rcIt(0,0,12,16,2),flIt(c),trIt()]),[x,40],[x+((i%2)*2-1)*30,360],(i*7)%40,loopF-((i*7)%40)-5,(i*40)%360,[100,100]));}}
+  applyBg(d,(spec&&spec.bg)||'#111111',!!(spec&&spec.transparent));
+  return d;
+}
+
 function buildFromSpec(rawSpec){
   const spec=coerceSpec(rawSpec);
   const loopF=Math.round((spec.sec||2.5)*FR);
   const d=clone(BASE); d.op=loopF;
+  if(spec.expr) return buildExpr(d, loopF, spec.expr, spec);
   if(spec.sleep) return buildSleep(d, loopF, spec);
   const close=spec.close||5;
   const blink = spec.blink ? blinkKeys(loopF,spec.blink.centers,spec.blink.close||close,spec.blink.squash||7) : null;
@@ -270,7 +345,15 @@ function presetSpec(p){
     sway:{sway:{angle:7,cycles:2},blink:{centers:[0.5],close:ui.close,squash:7}},
     flip:{flip:{count:1},blink:{centers:[0.92],close:ui.close,squash:7}},
     turn:{turn3d:{count:1},blink:{centers:[0.92],close:ui.close,squash:7}},
-    sleep:{sleep:true,sec:Math.max(ui.sec,3.5)},
+    sleep:{expr:'sleep',sec:Math.max(ui.sec,3.5)},
+    happy:{expr:'happy',sec:2},
+    sad:{expr:'sad',sec:3},
+    surprised:{expr:'surprised',sec:2},
+    love:{expr:'love',sec:2.5},
+    angry:{expr:'angry',sec:2},
+    correct:{expr:'correct',sec:1.5},
+    wrong:{expr:'wrong',sec:1.5},
+    celebrate:{expr:'celebrate',sec:2.5},
   }[p]||{blink:{centers:[0.72],close:ui.close,squash:7}};
   return Object.assign({sec:ui.sec,bg:ui.bg,transparent:ui.trans},m);
 }
@@ -282,11 +365,11 @@ function renderSpec(spec){ current=spec;
   if(anim)anim.destroy();
   document.querySelector('.stage').style.background=spec.transparent?'transparent':(spec.bg||'#111');
   anim=lottie.loadAnimation({container:document.getElementById('anim'),renderer:'svg',loop:true,autoplay:true,animationData:data}); }
-function renderPreset(p){ currentName=p; document.querySelectorAll('#presets button').forEach(x=>x.classList.toggle('on',x.dataset.p===p));
+function renderPreset(p){ currentName=p; document.querySelectorAll('#presets button, #feelings button').forEach(x=>x.classList.toggle('on',x.dataset.p===p));
   document.getElementById('turnwarn').style.display=(p==='turn')?'block':'none'; renderSpec(presetSpec(p)); }
 function reapply(){ if(current&&(current.__ai||current.__custom)){Object.assign(current,{sec:ui.sec,bg:ui.bg,transparent:ui.trans,shadow:ui.shadow});renderSpec(current);} else renderPreset(currentName); }
 const $=id=>document.getElementById(id);
-document.querySelectorAll('#presets button').forEach(b=>b.addEventListener('click',()=>renderPreset(b.dataset.p)));
+document.querySelectorAll('#presets button, #feelings button').forEach(b=>b.addEventListener('click',()=>renderPreset(b.dataset.p)));
 $('sec').oninput=e=>{ui.sec=+e.target.value;$('secV').textContent=ui.sec+'s';reapply();};
 $('spd').oninput=e=>{ui.close=+e.target.value;$('spdV').textContent=ui.close<=4?'Snappy':ui.close<=6?'Medium':'Soft';reapply();};
 $('jh').oninput=e=>{ui.jh=+e.target.value;$('jhV').textContent=ui.jh;reapply();};
@@ -305,7 +388,7 @@ $('pgo').onclick=async()=>{
     const r=await fetch('/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:text})});
     const d=await r.json(); if(!r.ok||d.error) throw new Error(d.error||('HTTP '+r.status));
     const spec=d.spec||{}; spec.__ai=true; spec.sec=ui.sec; spec.bg=ui.bg; spec.transparent=ui.trans; spec.shadow=ui.shadow;
-    document.querySelectorAll('#presets button').forEach(x=>x.classList.remove('on'));
+    document.querySelectorAll('#presets button, #feelings button').forEach(x=>x.classList.remove('on'));
     $('turnwarn').style.display=spec.turn3d?'block':'none';
     currentName=text.slice(0,22).replace(/[^a-z0-9]+/gi,'-').toLowerCase()||'prompt'; renderSpec(spec);
     if(!$('pstatus').textContent.startsWith('Showed')) $('pstatus').textContent='Done — tweak sliders, save, or download.';
