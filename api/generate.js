@@ -9,7 +9,7 @@
 
 const SYS = `Translate a request about a mascot named Dubby into a JSON animation spec. Output ONLY raw JSON, no prose, no markdown.
 Keys (include only what's relevant):
-"blink":{"centers":[0-1 floats],"close":int 3-9 small=snappy,"squash":int 4-9}
+"blink":{"centers":[0-1 floats, REQUIRED if blink is present],"close":int 3-9 small=snappy,"squash":int 4-9}
 "look":true
 "jump":{"count":1-3,"height":30-110}
 "bob":{"amp":8-26,"cycles":1-3}
