@@ -194,14 +194,24 @@ function zLayer(nm,x0,y0,t0,dur,size,ind,loopF){
 function buildSleep(d,loopF,spec){
   const breaths=Math.max(1,Math.round((spec.sec||3)/3.5));
   const br=breathingKeys(loopF,breaths);
+  const CL=Math.min(14,Math.round(loopF*0.09)); // closing duration (frames)
+  // open eyes: squash shut over the first CL frames, then stay shut
+  const eyeClose=[{t:0,s:[100,100,100],i:EIN.i,o:EIN.o},{t:CL,s:[100,6,100]}];
+  const eyeFade =[{t:0,s:[100],i:EIN.i,o:EIN.o},{t:Math.round(CL*0.7),s:[0]}];
+  // lids: invisible while eyes still open, fade in as they shut
+  const lidFade =[{t:0,s:[0],i:EOUT.i,o:EOUT.o},{t:Math.round(CL*0.6),s:[0],i:EOUT.i,o:EOUT.o},{t:CL,s:[100]}];
   d.layers.forEach(L=>{ L.ip=0; L.op=loopF; const nm=L.nm||'';
-    if(/white|pupil/.test(nm)) L.ks.o={a:0,k:0};
+    if(/white|pupil/.test(nm)){ L.ks.s={a:1,k:eyeClose}; L.ks.o={a:1,k:eyeFade}; }
     if(nm==='rig'){ L.ks.p={a:1,k:br.pos}; L.ks.s={a:1,k:br.scale}; L.ks.r={a:0,k:0}; }});
-  const bgi=d.layers.findIndex(L=>L.nm==='background');
   const half=Math.floor(loopF/2);
-  d.layers.splice(bgi,0,
-    lidLayer('lid-L',LWC,900,loopF), lidLayer('lid-R',RWC,901,loopF),
-    zLayer('z0',300,150,0,half,16,902,loopF), zLayer('z1',312,140,half,half,22,903,loopF));
+  const lidL=lidLayer('lid-L',LWC,900,loopF), lidR=lidLayer('lid-R',RWC,901,loopF);
+  lidL.ks.o={a:1,k:lidFade}; lidR.ks.o={a:1,k:lidFade};
+  // lids go just below brows (on the face); Z layers go on TOP of everything
+  const bodyi=d.layers.findIndex(L=>L.nm==='body');
+  d.layers.splice(bodyi,0, lidL, lidR);             // lids above body, over the face
+  d.layers.unshift(
+    zLayer('z0',300,150,0,half,16,902,loopF),
+    zLayer('z1',312,140,half,half,22,903,loopF));   // Z on top
   applyBg(d, spec.bg||'#111111', !!spec.transparent);
   return d;
 }
