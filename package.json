@@ -1,0 +1,7 @@
+{
+  "name": "dubby-studio",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Dubby Studio — generate and edit Lottie mascot animations, with an AI prompt backed by a serverless function.",
+  "type": "module"
+}

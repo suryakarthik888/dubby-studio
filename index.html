@@ -1,0 +1,280 @@
+<!doctype html>
+<meta charset="utf-8"><title>Dubby Studio</title>
+<style>
+ *{box-sizing:border-box} body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  background:#0a0a0a;color:#f0f0f0;display:flex;flex-direction:column;align-items:center;gap:14px;padding:22px}
+ .tag{font-size:11px;color:#F96922;font-weight:700;letter-spacing:.1em;text-transform:uppercase}
+ h1{font-size:15px;margin:0}
+ .stage{width:min(86vw,420px);aspect-ratio:1/1;background:#111;border-radius:22px;overflow:hidden;box-shadow:0 14px 44px rgba(0,0,0,.5),inset 0 0 0 1px rgba(255,255,255,.05)}
+ #anim{width:100%;height:100%}
+ .card{width:min(86vw,420px);background:#151515;border:1px solid #242424;border-radius:16px;padding:15px;display:flex;flex-direction:column;gap:12px}
+ .sec-title{font-size:11px;color:#6f6f6f;letter-spacing:.08em;text-transform:uppercase}
+ .prompt{display:flex;gap:8px}
+ .prompt input{flex:1;background:#1d1d1d;border:1px solid #2c2c2c;color:#f0f0f0;border-radius:11px;padding:11px 13px;font-size:14px}
+ .go{background:#F96922;color:#111;border:none;border-radius:11px;padding:0 16px;font-weight:700;cursor:pointer}
+ .go:disabled{opacity:.5}
+ .presets{display:flex;flex-wrap:wrap;gap:7px}
+ .presets button{background:#1e1e1e;color:#cfcfcf;border:1px solid #2c2c2c;border-radius:999px;padding:7px 12px;font-size:13px;cursor:pointer}
+ .presets button.on{background:#F96922;border-color:#F96922;color:#111;font-weight:600}
+ .ctl{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:13px;color:#bdbdbd}
+ .ctl input[type=range]{flex:1;accent-color:#F96922} .ctl .v{width:56px;text-align:right;color:#8a8a8a;font-variant-numeric:tabular-nums}
+ .row{display:flex;align-items:center;gap:14px;font-size:13px;color:#bdbdbd;flex-wrap:wrap}
+ input[type=color]{width:40px;height:28px;border:none;border-radius:8px;background:none;cursor:pointer;padding:0}
+ label.chk{display:flex;align-items:center;gap:6px;cursor:pointer} input[type=checkbox]{accent-color:#F96922;width:16px;height:16px}
+ select,.kf{background:#1d1d1d;border:1px solid #2c2c2c;color:#f0f0f0;border-radius:9px;padding:8px;font-size:13px}
+ .kf{flex:1;min-width:120px}
+ .dl{background:#F96922;color:#111;border:none;border-radius:11px;padding:10px 16px;font-weight:700;cursor:pointer}
+ .hint{font-size:11px;color:#6f6f6f;line-height:1.5} .status{font-size:11px;color:#8a8a8a}
+ details summary{cursor:pointer;font-size:12px;color:#8a8a8a}
+ .warn{font-size:11px;color:#c98a4a}
+ .lib-item{display:flex;align-items:center;gap:7px;background:#1b1b1b;border:1px solid #2a2a2a;border-radius:10px;padding:7px 9px}
+ .lib-item .nm{flex:1;font-size:13px;color:#e6e6e6;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+ .lib-item button{background:#262626;color:#cfcfcf;border:1px solid #333;border-radius:8px;padding:5px 9px;font-size:12px;cursor:pointer}
+ .lib-item button.del{color:#e07a5a}
+</style>
+<span class="tag">dubdub</span><h1>Dubby Studio</h1>
+<div class="stage"><div id="anim"></div></div>
+
+<div class="card">
+  <div class="sec-title">Tell Dubby what to do</div>
+  <div class="prompt"><input id="pin" placeholder="e.g. jump twice excitedly, then a slow blink"><button class="go" id="pgo">Make it</button></div>
+  <div class="status" id="pstatus"></div>
+</div>
+
+<div class="card">
+  <div class="sec-title">Presets</div>
+  <div class="presets" id="presets">
+    <button data-p="single">Single blink</button>
+    <button data-p="double">Double blink</button>
+    <button data-p="sleepy">Sleepy</button>
+    <button data-p="look">Look around</button>
+    <button data-p="excited">Excited jump</button>
+    <button data-p="jump">Big jump</button>
+    <button data-p="float">Idle float</button>
+    <button data-p="sway">Happy sway</button>
+    <button data-p="flip">Coin flip (2.5D)</button>
+    <button data-p="turn">Turn (3D)</button>
+  </div>
+  <div class="sec-title">Tune it</div>
+  <div class="ctl"><span>Loop length</span><input type="range" id="sec" min="1" max="4" step="0.25" value="2.5"><span class="v" id="secV">2.5s</span></div>
+  <div class="ctl"><span>Blink speed</span><input type="range" id="spd" min="3" max="9" step="1" value="5"><span class="v" id="spdV">Snappy</span></div>
+  <div class="ctl"><span>Jump height</span><input type="range" id="jh" min="30" max="110" step="5" value="82"><span class="v" id="jhV">82</span></div>
+  <div class="row"><label class="chk"><input type="checkbox" id="shadow" checked> Ground shadow</label>
+    <span>Background</span><input type="color" id="bg" value="#111111">
+    <label class="chk"><input type="checkbox" id="trans"> Transparent</label></div>
+  <div class="warn" id="turnwarn" style="display:none">3D Turn renders in Skottie / the diffusionstudio player and modern lottie-ios&nbsp;/&nbsp;android. It may appear flat in lottie-web embeds. Use the 2.5D flip for guaranteed cross-player support.</div>
+  <div class="row" style="justify-content:space-between">
+    <button class="dl" id="dl">Download .json</button><span class="status" id="status"></span></div>
+  <div class="hint">Presets, sliders and download work anywhere, even offline. Drop the file into Figma, Lottielab, or dev handoff.</div>
+</div>
+
+<div class="card">
+  <div class="sec-title">Saved animations</div>
+  <div class="row"><input class="kf" id="saveName" placeholder="name this animation"><button class="go" id="saveBtn" style="padding:9px 14px">Save</button></div>
+  <div id="lib" style="display:flex;flex-direction:column;gap:7px"></div>
+  <div class="hint">Saved in this browser and kept re-editable — Open drops it back into the sliders. Export downloads the .json; do that for permanent backups, since clearing browser data clears this list.</div>
+</div>
+
+<script id="base" type="application/json">{"v": "5.7.0", "fr": 60, "ip": 0, "op": 150, "w": 460, "h": 460, "assets": [], "slots": {"bgColor": {"p": {"a": 0, "k": [0.0667, 0.0667, 0.0667, 1]}}}, "layers": [{"ty": 4, "nm": "L-white-matte", "ind": 0, "parent": 99, "ip": 0, "op": 150, "st": 0, "ks": {"o": {"a": 0, "k": 100}, "r": {"a": 0, "k": 0}, "p": {"a": 0, "k": [87.4747, 160.979, 0]}, "a": {"a": 0, "k": [87.4747, 160.979, 0]}, "s": {"a": 0, "k": [100, 100, 100]}}, "shapes": [{"ty": "gr", "it": [{"ty": "el", "p": {"a": 0, "k": [87.4747, 160.979]}, "s": {"a": 0, "k": [99.6218, 60.451]}}, {"ty": "fl", "c": {"a": 0, "k": [0.94118, 0.94118, 0.94118]}, "o": {"a": 0, "k": 100}}, {"ty": "tr", "p": {"a": 0, "k": [0, 0]}, "a": {"a": 0, "k": [0, 0]}, "s": {"a": 0, "k": [100, 100]}, "r": {"a": 0, "k": 0}, "o": {"a": 0, "k": 100}}]}], "td": 1}, {"ty": 4, "nm": "L-pupil", "ind": 1, "parent": 99, "ip": 0, "op": 150, "st": 0, "ks": {"o": {"a": 0, "k": 100}, "r": {"a": 0, "k": 0}, "p": {"a": 0, "k": [87.4747, 160.979, 0]}, "a": {"a": 0, "k": [87.4747, 160.979, 0]}, "s": {"a": 0, "k": [100, 100, 100]}}, "shapes": [{"ty": "gr", "it": [{"ty": "el", "p": {"a": 0, "k": [54.2645, 163.623]}, "s": {"a": 0, "k": [53.6426, 43.8324]}}, {"ty": "fl", "c": {"a": 0, "k": [0.08627, 0.01961, 0.0]}, "o": {"a": 0, "k": 100}}, {"ty": "tr", "p": {"a": 0, "k": [0, 0]}, "a": {"a": 0, "k": [0, 0]}, "s": {"a": 0, "k": [100, 100]}, "r": {"a": 0, "k": 0}, "o": {"a": 0, "k": 100}}]}], "tt": 1}, {"ty": 4, "nm": "L-white", "ind": 2, "parent": 99, "ip": 0, "op": 150, "st": 0, "ks": {"o": {"a": 0, "k": 100}, "r": {"a": 0, "k": 0}, "p": {"a": 0, "k": [87.4747, 160.979, 0]}, "a": {"a": 0, "k": [87.4747, 160.979, 0]}, "s": {"a": 0, "k": [100, 100, 100]}}, "shapes": [{"ty": "gr", "it": [{"ty": "el", "p": {"a": 0, "k": [87.4747, 160.979]}, "s": {"a": 0, "k": [99.6218, 60.451]}}, {"ty": "fl", "c": {"a": 0, "k": [0.94118, 0.94118, 0.94118]}, "o": {"a": 0, "k": 100}}, {"ty": "tr", "p": {"a": 0, "k": [0, 0]}, "a": {"a": 0, "k": [0, 0]}, "s": {"a": 0, "k": [100, 100]}, "r": {"a": 0, "k": 0}, "o": {"a": 0, "k": 100}}]}]}, {"ty": 4, "nm": "R-white-matte", "ind": 3, "parent": 99, "ip": 0, "op": 150, "st": 0, "ks": {"o": {"a": 0, "k": 100}, "r": {"a": 0, "k": 0}, "p": {"a": 0, "k": [227.328, 160.979, 0]}, "a": {"a": 0, "k": [227.328, 160.979, 0]}, "s": {"a": 0, "k": [100, 100, 100]}}, "shapes": [{"ty": "gr", "it": [{"ty": "el", "p": {"a": 0, "k": [227.328, 160.979]}, "s": {"a": 0, "k": [99.6218, 60.451]}}, {"ty": "fl", "c": {"a": 0, "k": [0.94118, 0.94118, 0.94118]}, "o": {"a": 0, "k": 100}}, {"ty": "tr", "p": {"a": 0, "k": [0, 0]}, "a": {"a": 0, "k": [0, 0]}, "s": {"a": 0, "k": [100, 100]}, "r": {"a": 0, "k": 0}, "o": {"a": 0, "k": 100}}]}], "td": 1}, {"ty": 4, "nm": "R-pupil", "ind": 4, "parent": 99, "ip": 0, "op": 150, "st": 0, "ks": {"o": {"a": 0, "k": 100}, "r": {"a": 0, "k": 0}, "p": {"a": 0, "k": [227.328, 160.979, 0]}, "a": {"a": 0, "k": [227.328, 160.979, 0]}, "s": {"a": 0, "k": [100, 100, 100]}}, "shapes": [{"ty": "gr", "it": [{"ty": "el", "p": {"a": 0, "k": [194.125, 163.623]}, "s": {"a": 0, "k": [53.6426, 43.8324]}}, {"ty": "fl", "c": {"a": 0, "k": [0.08627, 0.01961, 0.0]}, "o": {"a": 0, "k": 100}}, {"ty": "tr", "p": {"a": 0, "k": [0, 0]}, "a": {"a": 0, "k": [0, 0]}, "s": {"a": 0, "k": [100, 100]}, "r": {"a": 0, "k": 0}, "o": {"a": 0, "k": 100}}]}], "tt": 1}, {"ty": 4, "nm": "R-white", "ind": 5, "parent": 99, "ip": 0, "op": 150, "st": 0, "ks": {"o": {"a": 0, "k": 100}, "r": {"a": 0, "k": 0}, "p": {"a": 0, "k": [227.328, 160.979, 0]}, "a": {"a": 0, "k": [227.328, 160.979, 0]}, "s": {"a": 0, "k": [100, 100, 100]}}, "shapes": [{"ty": "gr", "it": [{"ty": "el", "p": {"a": 0, "k": [227.328, 160.979]}, "s": {"a": 0, "k": [99.6218, 60.451]}}, {"ty": "fl", "c": {"a": 0, "k": [0.94118, 0.94118, 0.94118]}, "o": {"a": 0, "k": 100}}, {"ty": "tr", "p": {"a": 0, "k": [0, 0]}, "a": {"a": 0, "k": [0, 0]}, "s": {"a": 0, "k": [100, 100]}, "r": {"a": 0, "k": 0}, "o": {"a": 0, "k": 100}}]}]}, {"ty": 4, "nm": "brow-L", "ind": 6, "parent": 99, "ip": 0, "op": 150, "st": 0, "ks": {"o": {"a": 0, "k": 100}, "r": {"a": 0, "k": 0}, "p": {"a": 0, "k": [0, 0, 0]}, "a": {"a": 0, "k": [0, 0, 0]}, "s": {"a": 0, "k": [100, 100, 100]}}, "shapes": [{"ty": "gr", "it": [{"ty": "sh", "ks": {"a": 0, "k": {"c": false, "v": [[42.778, 91.189], [130.905, 91.189]], "o": [[35.323, -14.897], [0, 0]], "i": [[0, 0], [-19.757, -15.222]]}}}, {"ty": "st", "c": {"a": 0, "k": [0.41961, 0.1098, 0.01569]}, "o": {"a": 0, "k": 100}, "w": {"a": 0, "k": 14.2128}, "lc": 2, "lj": 2}, {"ty": "tr", "p": {"a": 0, "k": [0, 0]}, "a": {"a": 0, "k": [0, 0]}, "s": {"a": 0, "k": [100, 100]}, "r": {"a": 0, "k": 0}, "o": {"a": 0, "k": 100}}]}]}, {"ty": 4, "nm": "brow-R", "ind": 7, "parent": 99, "ip": 0, "op": 150, "st": 0, "ks": {"o": {"a": 0, "k": 100}, "r": {"a": 0, "k": 0}, "p": {"a": 0, "k": [0, 0, 0]}, "a": {"a": 0, "k": [0, 0, 0]}, "s": {"a": 0, "k": [100, 100, 100]}}, "shapes": [{"ty": "gr", "it": [{"ty": "sh", "ks": {"a": 0, "k": {"c": false, "v": [[174.924, 88.934], [279.788, 88.934]], "o": [[29.002, -23.955], [0, 0]], "i": [[0, 0], [-17.471, -21.299]]}}}, {"ty": "st", "c": {"a": 0, "k": [0.41961, 0.1098, 0.01569]}, "o": {"a": 0, "k": 100}, "w": {"a": 0, "k": 14.2128}, "lc": 2, "lj": 2}, {"ty": "tr", "p": {"a": 0, "k": [0, 0]}, "a": {"a": 0, "k": [0, 0]}, "s": {"a": 0, "k": [100, 100]}, "r": {"a": 0, "k": 0}, "o": {"a": 0, "k": 100}}]}]}, {"ty": 4, "nm": "body", "ind": 8, "parent": 99, "ip": 0, "op": 150, "st": 0, "ks": {"o": {"a": 0, "k": 100}, "r": {"a": 0, "k": 0}, "p": {"a": 0, "k": [0, 0, 0]}, "a": {"a": 0, "k": [0, 0, 0]}, "s": {"a": 0, "k": [100, 100, 100]}}, "shapes": [{"ty": "gr", "it": [{"ty": "sh", "ks": {"a": 0, "k": {"c": true, "v": [[341.569, 0.0], [364.838, 23.175], [364.838, 109.315], [364.822, 109.315], [364.822, 193.18], [260.536, 297.466], [104.286, 297.466], [0.0, 193.18], [0.0, 183.122], [104.286, 78.835], [129.395, 78.835], [230.946, 0.0], [254.215, 23.175], [254.215, 46.86]], "i": [[-36.376, 0.0], [0.0, -12.799], [0.0, 0.0], [0.0, 0.0], [0.0, 0.0], [57.596, 0.0], [0.0, 0.0], [0.0, 57.595], [0.0, 0.0], [-57.596, 0.0], [0.0, 0.0], [-48.816, 0.0], [0.0, -12.799], [0.0, 0.0]], "o": [[12.799, 0.0], [0.0, 0.0], [0.0, 0.0], [0.0, 0.0], [0.0, 57.595], [0.0, 0.0], [-57.596, 0.0], [0.0, 0.0], [0.0, -57.596], [0.0, 0.0], [11.452, -45.293], [12.799, 0.0], [0.0, 0.0], [18.784, -28.234]]}}}, {"ty": "st", "c": {"a": 0, "k": [0.62745, 0.14118, 0.0]}, "o": {"a": 0, "k": 100}, "w": {"a": 0, "k": 6}, "lc": 2, "lj": 2}, {"ty": "gf", "o": {"a": 0, "k": 100}, "t": 1, "s": {"a": 0, "k": [253.36, 0]}, "e": {"a": 0, "k": [338.251, 285.354]}, "g": {"p": 3, "k": {"a": 0, "k": [0.0, 1.0, 0.32157, 0.14902, 0.54469, 0.90588, 0.36078, 0.18431, 1.0, 0.94902, 0.59216, 0.15686]}}}, {"ty": "tr", "p": {"a": 0, "k": [0, 0]}, "a": {"a": 0, "k": [0, 0]}, "s": {"a": 0, "k": [100, 100]}, "r": {"a": 0, "k": 0}, "o": {"a": 0, "k": 100}}]}]}, {"ty": 3, "nm": "rig", "ind": 99, "ip": 0, "op": 150, "st": 0, "ks": {"o": {"a": 0, "k": 100}, "a": {"a": 0, "k": [182.5, 149.0, 0]}, "p": {"a": 0, "k": [230.0, 230.0, 0]}, "s": {"a": 0, "k": [80, 80, 100]}, "r": {"a": 0, "k": 0}}, "sr": 1}, {"ty": 4, "nm": "background", "ind": 100, "ip": 0, "op": 150, "st": 0, "ks": {"o": {"a": 0, "k": 100}, "r": {"a": 0, "k": 0}, "p": {"a": 0, "k": [0, 0, 0]}, "a": {"a": 0, "k": [0, 0, 0]}, "s": {"a": 0, "k": [100, 100, 100]}}, "shapes": [{"ty": "gr", "it": [{"ty": "rc", "p": {"a": 0, "k": [230.0, 230.0]}, "s": {"a": 0, "k": [460, 460]}, "r": {"a": 0, "k": 0}}, {"ty": "fl", "c": {"sid": "bgColor"}, "o": {"a": 0, "k": 100}}, {"ty": "tr", "p": {"a": 0, "k": [0, 0]}, "a": {"a": 0, "k": [0, 0]}, "s": {"a": 0, "k": [100, 100]}, "r": {"a": 0, "k": 0}, "o": {"a": 0, "k": 100}}]}]}]}</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script>
+<script>
+const BASE=JSON.parse(document.getElementById('base').textContent);
+const FR=60,S0=80,CC=[230,230],DC=[182.5,149],LWC=[87.4747,160.979],RWC=[227.328,160.979];
+const clone=o=>JSON.parse(JSON.stringify(o));
+const EIN={o:{x:[.55],y:[0]},i:{x:[.9],y:[1]}}, EOUT={o:{x:[.1],y:[0]},i:{x:[.45],y:[1]}}, EIO={o:{x:[.42],y:[0]},i:{x:[.58],y:[1]}};
+const vol=fy=>1/fy;
+function norm(pts){ const m=new Map(); pts.forEach(([t,v,e])=>m.set(Math.round(t),[v,e]));
+  const a=[...m.entries()].sort((x,y)=>x[0]-y[0]);
+  return a.map(([t,[v,e]],i)=>{const o={t,s:v}; if(i<a.length-1){o.i=e.i;o.o=e.o;} return o;}); }
+function opKeys(pts){ const m=new Map(); pts.forEach(([t,v,e])=>m.set(Math.round(t),[v,e]));
+  const a=[...m.entries()].sort((x,y)=>x[0]-y[0]);
+  return a.map(([t,[v,e]],i)=>{const o={t,s:[v]}; if(i<a.length-1){o.i=e.i;o.o=e.o;} return o;}); }
+
+// ---- pro blink ----
+function blinkKeys(loopF,centers,close,squash){
+  let p=[[0,[100,100,100],EIO]];
+  centers.forEach(f=>{const c=f*loopF;
+    p.push([c-close,[100,100,100],EIN],[c,[100,squash,100],EIO],[c+1,[100,squash,100],EOUT],
+           [c+close+3,[100,104,100],EOUT],[c+close+7,[100,100,100],EIO]);});
+  p.push([loopF,[100,100,100],EIO]); return norm(p);
+}
+function browDip(loopF,centers,close){
+  let p=[[0,[0,0,0],EIO]];
+  centers.forEach(f=>{const c=f*loopF; p.push([c-close,[0,0,0],EIN],[c,[0,4,0],EOUT],[c+close+7,[0,0,0],EIO]);});
+  p.push([loopF,[0,0,0],EIO]); return norm(p);
+}
+function lookKeys(loopF,c){const a=9,s=[[0,0],[.2,-a],[.45,-a],[.55,a],[.8,a],[1,0]];
+  return norm(s.map(([f,dx])=>[f*loopF,[c[0]+dx,c[1],0],EIO]));}
+
+// ---- pro jump (+ shadow centers) ----
+function jumpKeys(loopF,n,h){
+  const seg=loopF/(n+0.5); let pos=[[0,[CC[0],CC[1],0],EIO]],scl=[[0,[S0,S0,100],EIO]],centers=[];
+  for(let k=0;k<n;k++){const c=seg*(k+0.6); centers.push(c);
+    pos.push([c-12,[CC[0],CC[1]+8,0],EIN],[c-4,[CC[0],CC[1]-h*0.5,0],EOUT],[c,[CC[0],CC[1]-h,0],EOUT],
+             [c+4,[CC[0],CC[1]-h,0],EIN],[c+12,[CC[0],CC[1]+4,0],EOUT],[c+20,[CC[0],CC[1],0],EIO]);
+    scl.push([c-12,[S0*1.12,S0*0.88,100],EIN],[c-4,[S0*vol(1.12),S0*1.12,100],EOUT],[c,[S0,S0,100],EIN],
+             [c+4,[S0,S0,100],EIN],[c+10,[S0*vol(1.08),S0*1.08,100],EOUT],[c+13,[S0*1.14,S0*0.86,100],EOUT],
+             [c+18,[S0*0.98,S0*1.02,100],EIO],[c+22,[S0,S0,100],EIO]);}
+  pos.push([loopF,[CC[0],CC[1],0],EIO]); scl.push([loopF,[S0,S0,100],EIO]);
+  return {pos:norm(pos),scale:norm(scl),centers};
+}
+function bobKeys(loopF,amp,cyc){let p=[];const N=cyc*4;
+  for(let i=0;i<=N;i++)p.push([loopF*i/N,[CC[0],CC[1]-amp*Math.sin(2*Math.PI*cyc*i/N),0],EIO]); return norm(p);}
+function swayKeys(loopF,ang,cyc){let r=[];const N=cyc*4;
+  for(let i=0;i<=N;i++)r.push([loopF*i/N,[ang*Math.sin(2*Math.PI*cyc*i/N)],EIO]); return norm(r);}
+function pulseKeys(loopF,a,cyc){let s=[];const N=cyc*4;
+  for(let i=0;i<=N;i++){const f=1+a*Math.max(0,Math.sin(2*Math.PI*cyc*i/N)); s.push([loopF*i/N,[S0*f,S0*f,100],EIO]);} return norm(s);}
+function flipKeys(loopF,n){const seg=loopF/n; let s=[[0,[S0,S0,100],EIO]];
+  for(let k=0;k<n;k++){const c=seg*(k+0.5);
+    s.push([c-11,[S0,S0,100],EIN],[c-3,[S0*0.5,S0*1.04,100],EIO],[c,[S0*0.04,S0*1.06,100],EIO],
+           [c+3,[S0*0.5,S0*1.04,100],EIO],[c+11,[S0,S0,100],EOUT]);}
+  s.push([loopF,[S0,S0,100],EIO]); return norm(s);
+}
+
+function shadowLayer(loopF,centers){
+  const GY=362,rx=98,ry=16; let sc,op;
+  if(centers&&centers.length){ sc=[[0,[100,100,100],EIO]]; op=[[0,55,EIO]];
+    centers.forEach(c=>{ sc.push([c-12,[100,100,100],EIN],[c,[52,52,100],EOUT],[c+13,[110,110,100],EOUT],[c+20,[100,100,100],EIO]);
+      op.push([c-12,55,EIN],[c,24,EOUT],[c+13,62,EOUT],[c+20,55,EIO]); });
+    sc.push([loopF,[100,100,100],EIO]); op.push([loopF,55,EIO]);
+    sc=norm(sc); op=opKeys(op);
+  } else { sc={a:0,k:[100,100,100]}; op={a:0,k:55}; }
+  return {ty:4,nm:"shadow",ind:98,ip:0,op:loopF,st:0,
+    ks:{o:Array.isArray(op)?{a:1,k:op}:op,r:{a:0,k:0},p:{a:0,k:[CC[0],GY,0]},a:{a:0,k:[CC[0],GY,0]},
+        s:Array.isArray(sc)?{a:1,k:sc}:sc},
+    shapes:[{ty:"gr",it:[{ty:"el",p:{a:0,k:[CC[0],GY]},s:{a:0,k:[rx*2,ry*2]}},
+      {ty:"fl",c:{a:0,k:[0,0,0]},o:{a:0,k:32}},
+      {ty:"tr",p:{a:0,k:[0,0]},a:{a:0,k:[0,0]},s:{a:0,k:[100,100]},r:{a:0,k:0},o:{a:0,k:100}}]}]};
+}
+
+function hex(h){const n=parseInt(h.slice(1),16);return [((n>>16)&255)/255,((n>>8)&255)/255,(n&255)/255,1];}
+function applyBg(d,bg,trans){ d.layers.forEach(L=>{(L.shapes||[]).forEach(function w(s){
+  if(s.it)s.it.forEach(w); if(s.ty==='fl'&&s.c&&s.c.sid==='bgColor'){s.c={a:0,k:hex(bg)};s.o={a:0,k:trans?0:100};}});});}
+
+function buildFromSpec(spec){
+  const loopF=Math.round((spec.sec||2.5)*FR);
+  const d=clone(BASE); d.op=loopF;
+  const close=spec.close||5;
+  const blink = spec.blink ? blinkKeys(loopF,spec.blink.centers,spec.blink.close||close,spec.blink.squash||7) : null;
+  const brows = spec.blink ? browDip(loopF,spec.blink.centers,spec.blink.close||close) : null;
+  let pos=null,scale=null,rot=null,shCenters=null;
+  if(spec.jump){const j=jumpKeys(loopF,spec.jump.count,spec.jump.height); pos=j.pos; scale=j.scale; shCenters=j.centers;}
+  else if(spec.bob){pos=bobKeys(loopF,spec.bob.amp,spec.bob.cycles);}
+  if(!scale){ if(spec.flip) scale=flipKeys(loopF,spec.flip.count); else if(spec.pulse) scale=pulseKeys(loopF,spec.pulse.amount,spec.pulse.cycles||2); }
+  if(spec.sway) rot=swayKeys(loopF,spec.sway.angle,spec.sway.cycles);
+  const is3d=!!spec.turn3d;
+  if(is3d) d.ddd=1;
+
+  d.layers.forEach(L=>{ L.ip=0;L.op=loopF; const nm=L.nm||'';
+    if(is3d && nm!=='background') L.ddd=1;
+    if(nm==='rig'){
+      if(pos) L.ks.p={a:1,k:pos};
+      if(scale) L.ks.s={a:1,k:scale};
+      if(rot) L.ks.r={a:1,k:rot};
+      if(is3d){ const n=spec.turn3d.count||1;
+        const kf=[]; for(let k=0;k<=n;k++) kf.push({t:Math.round(loopF*k/n),s:[360*k/n],
+          ...(k<n?{i:{x:[.5],y:[1]},o:{x:[.5],y:[0]}}:{})});
+        L.ks.ry={a:1,k:kf}; L.ks.rx={a:0,k:0}; L.ks.rz={a:0,k:0}; L.ks.p={a:0,k:[CC[0],CC[1],0]}; }
+    }
+    if(/white|pupil/.test(nm) && blink) L.ks.s={a:1,k:blink};
+    if(nm==='L-pupil' && spec.look) L.ks.p={a:1,k:lookKeys(loopF,LWC)};
+    if(nm==='R-pupil' && spec.look) L.ks.p={a:1,k:lookKeys(loopF,RWC)};
+    if(nm==='brow-L' && brows) L.ks.p={a:1,k:brows};
+    if(nm==='brow-R' && brows) L.ks.p={a:1,k:brows};
+  });
+  if(spec.shadow!==false && (shCenters || spec.bob)){
+    const bgi=d.layers.findIndex(L=>L.nm==='background');
+    d.layers.splice(bgi,0, shadowLayer(loopF, shCenters||[]));
+  }
+  applyBg(d, spec.bg||'#111111', !!spec.transparent);
+  return d;
+}
+
+// ---- UI ----
+let ui={sec:2.5,close:5,jh:82,bg:'#111111',trans:false,shadow:true};
+function presetSpec(p){
+  const m={
+    single:{blink:{centers:[0.72],close:ui.close,squash:7}},
+    double:{blink:{centers:[0.64,0.76],close:Math.min(ui.close,4),squash:6}},
+    sleepy:{blink:{centers:[0.45,0.85],close:Math.max(ui.close,8),squash:4}},
+    look:{look:true,blink:{centers:[0.5],close:ui.close,squash:7}},
+    excited:{jump:{count:2,height:ui.jh},blink:{centers:[0.5],close:3,squash:6},shadow:ui.shadow},
+    jump:{jump:{count:1,height:ui.jh},blink:{centers:[0.9],close:ui.close,squash:7},shadow:ui.shadow},
+    float:{bob:{amp:16,cycles:2},blink:{centers:[0.5],close:ui.close,squash:7},shadow:ui.shadow},
+    sway:{sway:{angle:7,cycles:2},blink:{centers:[0.5],close:ui.close,squash:7}},
+    flip:{flip:{count:1},blink:{centers:[0.92],close:ui.close,squash:7}},
+    turn:{turn3d:{count:1},blink:{centers:[0.92],close:ui.close,squash:7}},
+  }[p]||{blink:{centers:[0.72],close:ui.close,squash:7}};
+  return Object.assign({sec:ui.sec,bg:ui.bg,transparent:ui.trans},m);
+}
+let anim,current,currentName='single';
+function renderSpec(spec){ current=spec; const data=buildFromSpec(spec); if(anim)anim.destroy();
+  document.querySelector('.stage').style.background=spec.transparent?'transparent':(spec.bg||'#111');
+  anim=lottie.loadAnimation({container:document.getElementById('anim'),renderer:'svg',loop:true,autoplay:true,animationData:data}); }
+function renderPreset(p){ currentName=p; document.querySelectorAll('#presets button').forEach(x=>x.classList.toggle('on',x.dataset.p===p));
+  document.getElementById('turnwarn').style.display=(p==='turn')?'block':'none'; renderSpec(presetSpec(p)); }
+function reapply(){ if(current&&(current.__ai||current.__custom)){Object.assign(current,{sec:ui.sec,bg:ui.bg,transparent:ui.trans,shadow:ui.shadow});renderSpec(current);} else renderPreset(currentName); }
+const $=id=>document.getElementById(id);
+document.querySelectorAll('#presets button').forEach(b=>b.addEventListener('click',()=>renderPreset(b.dataset.p)));
+$('sec').oninput=e=>{ui.sec=+e.target.value;$('secV').textContent=ui.sec+'s';reapply();};
+$('spd').oninput=e=>{ui.close=+e.target.value;$('spdV').textContent=ui.close<=4?'Snappy':ui.close<=6?'Medium':'Soft';reapply();};
+$('jh').oninput=e=>{ui.jh=+e.target.value;$('jhV').textContent=ui.jh;reapply();};
+$('shadow').onchange=e=>{ui.shadow=e.target.checked;reapply();};
+$('bg').oninput=e=>{ui.bg=e.target.value;reapply();};
+$('trans').onchange=e=>{ui.trans=e.target.checked;reapply();};
+$('dl').onclick=()=>{const blob=new Blob([JSON.stringify(buildFromSpec(current))],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='dubby-'+currentName+'-'+ui.sec+'s.json';a.click();
+  $('status').textContent='Saved '+a.download;};
+
+// ---- prompt -> backend ----
+$('pgo').onclick=async()=>{
+  const text=$('pin').value.trim(); if(!text)return;
+  $('pgo').disabled=true; $('pstatus').textContent='Dubby is thinking…';
+  try{
+    const r=await fetch('/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:text})});
+    const d=await r.json(); if(!r.ok||d.error) throw new Error(d.error||('HTTP '+r.status));
+    const spec=d.spec; spec.__ai=true; spec.sec=ui.sec; spec.bg=ui.bg; spec.transparent=ui.trans; spec.shadow=ui.shadow;
+    document.querySelectorAll('#presets button').forEach(x=>x.classList.remove('on'));
+    $('turnwarn').style.display=spec.turn3d?'block':'none';
+    currentName=text.slice(0,22).replace(/[^a-z0-9]+/gi,'-').toLowerCase()||'prompt'; renderSpec(spec);
+    $('pstatus').textContent='Done — tweak sliders, save, or download.';
+  }catch(e){ $('pstatus').textContent='Error: '+e.message; }
+  $('pgo').disabled=false;
+};
+$('pin').addEventListener('keydown',e=>{if(e.key==='Enter')$('pgo').click();});
+// ---- saved library (in-memory first, browser storage as best-effort backup) ----
+const LKEY='dubby_library';
+let STORAGE_OK=true; try{localStorage.setItem('__t','1');localStorage.removeItem('__t');}catch(e){STORAGE_OK=false;}
+function hydrate(){try{return JSON.parse(localStorage.getItem(LKEY)||'[]')}catch(e){return []}}
+let LIB = hydrate();
+function persist(){try{localStorage.setItem(LKEY,JSON.stringify(LIB))}catch(e){}}
+function libRender(){ const el=$('lib'); el.innerHTML='';
+  if(!STORAGE_OK){ const w=document.createElement('div'); w.className='warn';
+    w.textContent='Browser storage is blocked here, so saves last only this session. Download the file and open it locally to keep a library — or Export each one as .json.'; el.appendChild(w); }
+  if(!LIB.length){ const e=document.createElement('div'); e.className='hint'; e.textContent='No saved animations yet.'; el.appendChild(e); return; }
+  LIB.slice().reverse().forEach(item=>{ const d=document.createElement('div'); d.className='lib-item';
+    const nm=document.createElement('span'); nm.className='nm'; nm.textContent=item.name; d.appendChild(nm);
+    const mk=(t,fn,cls)=>{const b=document.createElement('button'); b.textContent=t; if(cls)b.className=cls; b.onclick=fn; return b;};
+    d.append(mk('Open',()=>libOpen(item)), mk('Export',()=>libExport(item)), mk('Delete',()=>libDelete(item.id),'del'));
+    el.appendChild(d); }); }
+function libOpen(item){ const spec=clone(item.spec); spec.__custom=true; spec.__ai=false; current=spec;
+  currentName=item.name.replace(/[^a-z0-9]+/gi,'-').toLowerCase()||'anim';
+  ui.sec=spec.sec||2.5; ui.bg=spec.bg||'#111111'; ui.trans=!!spec.transparent; ui.shadow=spec.shadow!==false;
+  $('sec').value=ui.sec; $('secV').textContent=ui.sec+'s'; $('bg').value=ui.bg; $('trans').checked=ui.trans; $('shadow').checked=ui.shadow;
+  if(spec.blink&&spec.blink.close){ui.close=Math.min(9,Math.max(3,spec.blink.close)); $('spd').value=ui.close; $('spdV').textContent=ui.close<=4?'Snappy':ui.close<=6?'Medium':'Soft';}
+  if(spec.jump&&spec.jump.height){ui.jh=spec.jump.height; $('jh').value=ui.jh; $('jhV').textContent=ui.jh;}
+  document.querySelectorAll('#presets button').forEach(x=>x.classList.remove('on'));
+  $('turnwarn').style.display=spec.turn3d?'block':'none';
+  renderSpec(spec); $('status').textContent='Opened "'+item.name+'" — edit, then Save again to keep changes.'; }
+function libExport(item){ const blob=new Blob([JSON.stringify(buildFromSpec(item.spec))],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download='dubby-'+(item.name.replace(/[^a-z0-9]+/gi,'-').toLowerCase()||'anim')+'.json'; a.click(); }
+function libDelete(id){ LIB=LIB.filter(x=>x.id!==id); persist(); libRender(); $('status').textContent='Deleted.'; }
+$('saveBtn').onclick=()=>{ if(!current){$('status').textContent='Make an animation first, then Save.';return;}
+  const name=$('saveName').value.trim()||currentName||'animation';
+  LIB.push({id:Date.now()+'-'+Math.floor(Math.random()*1000),name,spec:clone(current),ts:Date.now()});
+  persist(); $('saveName').value=''; libRender(); $('status').textContent='Saved "'+name+'" ('+LIB.length+' in library)'; };
+$('saveName').addEventListener('keydown',e=>{if(e.key==='Enter')$('saveBtn').click();});
+libRender();
+renderPreset('single');
+</script>
